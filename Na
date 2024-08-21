@@ -1,0 +1,183 @@
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 140)
+frame.Position = UDim2.new(1, -320, 0, 20)
+frame.BackgroundColor3 = Color3.new(0, 0, 0)
+frame.BackgroundTransparency = 0.5 
+frame.BorderSizePixel = 0 
+frame.Parent = screenGui
+
+frame.ClipsDescendants = true
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+local header = Instance.new("TextLabel")
+header.Size = UDim2.new(1, 0, 0, 20)
+header.Position = UDim2.new(0, 0, 0, 0)
+header.Text = "discord.gg/ZVB9HzeA8D"
+header.TextColor3 = Color3.new(1, 1, 1)
+header.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+header.TextScaled = true
+header.TextStrokeTransparency = 0.5
+header.BorderSizePixel = 0
+header.TextSize = 12 
+header.Parent = frame
+
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 12) -- Радиус углов
+headerCorner.Parent = header
+
+local playerNameInput = Instance.new("TextBox")
+playerNameInput.Size = UDim2.new(1, -10, 0, 40)
+playerNameInput.Position = UDim2.new(0, 5, 0, 25)
+playerNameInput.PlaceholderText = "Enter player's username"
+playerNameInput.TextColor3 = Color3.new(1, 1, 1)
+playerNameInput.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+playerNameInput.BorderSizePixel = 0
+playerNameInput.Parent = frame
+
+local playerNameInputCorner = Instance.new("UICorner")
+playerNameInputCorner.CornerRadius = UDim.new(0, 10)
+playerNameInputCorner.Parent = playerNameInput
+
+local startButton = Instance.new("TextButton")
+startButton.Size = UDim2.new(1, -10, 0, 30)
+startButton.Position = UDim2.new(0, 5, 0, 70)
+startButton.Text = "Start"
+startButton.TextColor3 = Color3.new(1, 1, 1)
+startButton.BackgroundColor3 = Color3.new(0.3, 0.5, 0.3)
+startButton.BorderSizePixel = 0
+startButton.Parent = frame
+
+local startButtonCorner = Instance.new("UICorner")
+startButtonCorner.CornerRadius = UDim.new(0, 10)
+startButtonCorner.Parent = startButton
+
+local stopButton = Instance.new("TextButton")
+stopButton.Size = UDim2.new(1, -10, 0, 30)
+stopButton.Position = UDim2.new(0, 5, 0, 105) 
+stopButton.Text = "Stop"
+stopButton.TextColor3 = Color3.new(1, 1, 1)
+stopButton.BackgroundColor3 = Color3.new(0.5, 0.3, 0.3)
+stopButton.BorderSizePixel = 0
+stopButton.Parent = frame
+
+local stopButtonCorner = Instance.new("UICorner")
+stopButtonCorner.CornerRadius = UDim.new(0, 10) 
+stopButtonCorner.Parent = stopButton
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 40, 0, 40)
+toggleButton.Position = UDim2.new(0, 200, 0, -41)
+toggleButton.Text = "Hide"
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.BackgroundColor3 = Color3.new(0, 0, 0)
+toggleButton.BackgroundTransparency = 0.3
+toggleButton.BorderSizePixel = 0
+toggleButton.Parent = screenGui
+
+local toggleButtonCorner = Instance.new("UICorner")
+toggleButtonCorner.CornerRadius = UDim.new(0, 15) 
+toggleButtonCorner.Parent = toggleButton
+
+local dragging = false
+local dragInput, mousePos, framePos
+
+header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = frame.Position
+	end
+end)
+
+header.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - mousePos
+		frame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+	end
+end)
+
+local TweenService = game:GetService("TweenService")
+
+-- Функция для анимации скрытия
+local function hideFrame()
+	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local goal = {BackgroundTransparency = 1, Size = UDim2.new(0, 300, 0, 0)}
+	local tween = TweenService:Create(frame, tweenInfo, goal)
+	tween:Play()
+	tween.Completed:Connect(function()
+		frame.Visible = false
+	end)
+end
+
+local function showFrame()
+	frame.Visible = true
+	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local goal = {BackgroundTransparency = 0.5, Size = UDim2.new(0, 300, 0, 140)}
+	local tween = TweenService:Create(frame, tweenInfo, goal)
+	tween:Play()
+end
+
+local stopTeleport = false
+
+local function startFollowing(targetPlayer)
+	local player = game.Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+
+	if character:FindFirstChild("Humanoid").RigType ~= Enum.HumanoidRigType.R6 then
+		playerNameInput.Text = "Your character isn't R6"
+		return
+	end
+	local teleportDistance = 4 
+
+	while not stopTeleport do
+		if targetPlayer and targetPlayer.Character and character then
+
+			local targetPosition = targetPlayer.Character.PrimaryPart.Position - targetPlayer.Character.PrimaryPart.CFrame.LookVector * teleportDistance
+			character:SetPrimaryPartCFrame(CFrame.new(targetPosition))
+
+			if teleportDistance == 4 then
+				teleportDistance = 1.5
+			else
+				teleportDistance = 4
+			end
+		end
+		wait(0.1)
+	end
+end
+
+-- Обработчик нажатия кнопки "Start"
+startButton.MouseButton1Click:Connect(function()
+	stopTeleport = false -- Разрешаем телепортацию
+	local targetPlayerName = playerNameInput.Text
+	local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
+	if targetPlayer then
+		startFollowing(targetPlayer)
+	else
+		playerNameInput.Text = "Player not found!"
+	end
+end)
+
+-- Обработчик нажатия кнопки "Stop"
+stopButton.MouseButton1Click:Connect(function()
+	stopTeleport = true -- Останавливаем телепортацию
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+	if frame.Visible then
+		hideFrame()
+		toggleButton.Text = "Show"
+	else
+		showFrame()
+		toggleButton.Text = "Hide"
+	end
+end)
