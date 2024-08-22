@@ -4,8 +4,8 @@ local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 300, 0, 140)
 frame.Position = UDim2.new(1, -320, 0, 20)
 frame.BackgroundColor3 = Color3.new(0, 0, 0)
-frame.BackgroundTransparency = 0.5 
-frame.BorderSizePixel = 0 
+frame.BackgroundTransparency = 0.5
+frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
 frame.ClipsDescendants = true
@@ -22,17 +22,17 @@ header.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 header.TextScaled = true
 header.TextStrokeTransparency = 0.5
 header.BorderSizePixel = 0
-header.TextSize = 12 
+header.TextSize = 12
 header.Parent = frame
 
 local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 12) -- Радиус углов
+headerCorner.CornerRadius = UDim.new(0, 12)
 headerCorner.Parent = header
 
 local playerNameInput = Instance.new("TextBox")
 playerNameInput.Size = UDim2.new(1, -10, 0, 40)
 playerNameInput.Position = UDim2.new(0, 5, 0, 25)
-playerNameInput.PlaceholderText = "Enter player's username"
+playerNameInput.PlaceholderText = "Enter player name"
 playerNameInput.TextColor3 = Color3.new(1, 1, 1)
 playerNameInput.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 playerNameInput.BorderSizePixel = 0
@@ -47,7 +47,7 @@ startButton.Size = UDim2.new(1, -10, 0, 30)
 startButton.Position = UDim2.new(0, 5, 0, 70)
 startButton.Text = "Start"
 startButton.TextColor3 = Color3.new(1, 1, 1)
-startButton.BackgroundColor3 = Color3.new(0.3, 0.5, 0.3)
+startButton.BackgroundColor3 = Color3.new(0.701961, 0.701961, 0.701961)
 startButton.BorderSizePixel = 0
 startButton.Parent = frame
 
@@ -57,20 +57,20 @@ startButtonCorner.Parent = startButton
 
 local stopButton = Instance.new("TextButton")
 stopButton.Size = UDim2.new(1, -10, 0, 30)
-stopButton.Position = UDim2.new(0, 5, 0, 105) 
+stopButton.Position = UDim2.new(0, 5, 0, 105)
 stopButton.Text = "Stop"
 stopButton.TextColor3 = Color3.new(1, 1, 1)
-stopButton.BackgroundColor3 = Color3.new(0.5, 0.3, 0.3)
+stopButton.BackgroundColor3 = Color3.new(0.290196, 0.290196, 0.290196)
 stopButton.BorderSizePixel = 0
 stopButton.Parent = frame
 
 local stopButtonCorner = Instance.new("UICorner")
-stopButtonCorner.CornerRadius = UDim.new(0, 10) 
+stopButtonCorner.CornerRadius = UDim.new(0, 10)
 stopButtonCorner.Parent = stopButton
 
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 40, 0, 40)
-toggleButton.Position = UDim2.new(0, 200, 0, -41)
+toggleButton.Position = UDim2.new(0, 1043, 0, -41)
 toggleButton.Text = "Hide"
 toggleButton.TextColor3 = Color3.new(1, 1, 1)
 toggleButton.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -79,7 +79,7 @@ toggleButton.BorderSizePixel = 0
 toggleButton.Parent = screenGui
 
 local toggleButtonCorner = Instance.new("UICorner")
-toggleButtonCorner.CornerRadius = UDim.new(0, 15) 
+toggleButtonCorner.CornerRadius = UDim.new(0, 15)
 toggleButtonCorner.Parent = toggleButton
 
 local dragging = false
@@ -128,27 +128,53 @@ local function showFrame()
 end
 
 local stopTeleport = false
+local teleportDistance = 4
 
 local function startFollowing(targetPlayer)
-	local player = game.Players.LocalPlayer
-	local character = player.Character or player.CharacterAdded:Wait()
+	stopTeleport = false -- Разрешаем телепортацию
 
-	if character:FindFirstChild("Humanoid").RigType ~= Enum.HumanoidRigType.R6 then
-		playerNameInput.Text = "Your character isn't R6"
-		return
-	end
-	local teleportDistance = 4 
+	if targetPlayer and targetPlayer.Character then
+		local targetHumanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if not targetHumanoidRootPart then
+			playerNameInput.Text = "Target player does not have a HumanoidRootPart"
+			return
+		end
 
-	while not stopTeleport do
-		if targetPlayer and targetPlayer.Character and character then
+		while not stopTeleport do
+			local targetCFrame = targetHumanoidRootPart.CFrame
+			local targetPosition = targetCFrame.Position - targetCFrame.LookVector * teleportDistance
 
-			local targetPosition = targetPlayer.Character.PrimaryPart.Position - targetPlayer.Character.PrimaryPart.CFrame.LookVector * teleportDistance
-			character:SetPrimaryPartCFrame(CFrame.new(targetPosition))
+			-- Телепортируем игрока
+			local player = game.Players.LocalPlayer
+			local character = player.Character or player.CharacterAdded:Wait()
+			local playerHumanoidRootPart = character:FindFirstChild("HumanoidRootPart")
 
+			if playerHumanoidRootPart then
+				playerHumanoidRootPart.CFrame = CFrame.new(targetPosition, targetCFrame.Position)
+			end
+
+			-- Переключаем дистанцию телепортации
 			if teleportDistance == 4 then
 				teleportDistance = 1.5
 			else
 				teleportDistance = 4
+			end
+
+			wait(0.1)
+		end
+	end
+end
+
+local function syncRotation(targetPlayer)
+	while not stopTeleport do
+		if targetPlayer and targetPlayer.Character then
+			local targetHumanoidRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+			local playerHumanoidRootPart = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+			if targetHumanoidRootPart and playerHumanoidRootPart then
+				-- Синхронизируем поворот
+				local targetCFrame = targetHumanoidRootPart.CFrame
+				playerHumanoidRootPart.CFrame = CFrame.new(playerHumanoidRootPart.Position, targetCFrame.Position)
 			end
 		end
 		wait(0.1)
@@ -162,6 +188,7 @@ startButton.MouseButton1Click:Connect(function()
 	local targetPlayer = game.Players:FindFirstChild(targetPlayerName)
 	if targetPlayer then
 		startFollowing(targetPlayer)
+		syncRotation(targetPlayer) -- Начинаем синхронизацию поворота
 	else
 		playerNameInput.Text = "Player not found!"
 	end
